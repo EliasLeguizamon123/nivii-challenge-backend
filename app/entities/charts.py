@@ -1,10 +1,23 @@
 from typing import Optional, TYPE_CHECKING, List
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
-from .chart_data import ChartData
+from .chart_data import ChartData, ChartDataRead
 
 if TYPE_CHECKING:
     from app.entities.query_history import QueryHistory
+    
+class ChartRead(SQLModel):
+    id: int
+    history_id: int
+    chart_type: str
+    title: str
+    x_axis: str     
+    y_axis: str      
+    created_at: datetime
+    data: List[ChartDataRead] = []
+    
+    class Config:
+        orm_mode = True
     
 class Chart(SQLModel, table=True):
     __tablename__ = "charts"
