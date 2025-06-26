@@ -6,7 +6,6 @@ from app.entities.query_history import QueryHistory
 from app.entities.messages import Message
 from app.entities.charts import Chart
 from app.entities.chart_data import ChartData
-from app.entities.products import Product
 from app.entities.sales import Sale
 
 load_dotenv()

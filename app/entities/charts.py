@@ -1,6 +1,7 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, List
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
+from .chart_data import ChartData
 
 if TYPE_CHECKING:
     from app.entities.query_history import QueryHistory
@@ -17,3 +18,4 @@ class Chart(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     history: Optional["QueryHistory"] = Relationship(back_populates="charts")
+    data: List["ChartData"] = Relationship(back_populates="chart")
