@@ -20,5 +20,5 @@ class QueryHistory(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     preview: Optional[str] = None
 
-    messages: List["Message"] = Relationship(back_populates="history")
-    charts: List["Chart"] = Relationship(back_populates="history")
+    messages: List["Message"] = Relationship(back_populates="history", cascade_delete="all, delete-orphan")
+    charts: List["Chart"] = Relationship(back_populates="history", cascade_delete="all, delete-orphan")

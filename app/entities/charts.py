@@ -31,4 +31,4 @@ class Chart(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     history: Optional["QueryHistory"] = Relationship(back_populates="charts")
-    data: List["ChartData"] = Relationship(back_populates="chart")
+    data: List["ChartData"] = Relationship(back_populates="chart", cascade_delete="all, delete-orphan")

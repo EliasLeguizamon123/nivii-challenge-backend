@@ -3,15 +3,17 @@ from sqlmodel import Session, select
 from typing import List
 
 from app.database.config import get_session
+from app.services.openai import generate_sql_from_natural_language
 from app.entities.messages import Message
-from app.entities.query_history import QueryHistory
-
+from app.entities.query_history import QueryHistory, QueryHistoryRead
+from app.services.generate_assitant_content_and_chart_data import generate_assistant_content_and_chart_data
 router = APIRouter()
 
-@router.post("/", response_model=Message)
+@router.post("/", response_model=QueryHistoryRead)
 def create_message_with_history(message: Message, session: Session = Depends(get_session)):
     """
-    Create a message, if there is no existing query history, create a new one.
+    Create a message, if there is no existing query history, create a new one, then send message to OpenAi to generate a Sqlite query
+    After this send this query into database and get the data obtained.
     """
     if message.history_id:
         history = session.get(QueryHistory, message.history_id)
@@ -23,7 +25,8 @@ def create_message_with_history(message: Message, session: Session = Depends(get
         session.add(history)
         session.commit()
         session.refresh(history)
-    
+        
+    # Save user message into history
     message = Message(
         content=message.content,
         type=message.type,
@@ -33,8 +36,34 @@ def create_message_with_history(message: Message, session: Session = Depends(get
     session.add(message)
     session.commit()
     session.refresh(message)
+    
+    # Generate SQLite query
+    query = generate_sql_from_natural_language(message.content)
+    
+    # execute query
+    print(f"SQLite query: {query}")
+    
+    assistant_content, has_chart = generate_assistant_content_and_chart_data(
+        query=query,
+        session=session,
+        history=history,
+        message=message
+    )
+    
+    assistant_msg = Message(
+        content=assistant_content,
+        type="assistant",
+        history_id=history.id,
+        has_chart=has_chart
+    )
+    
+    session.add(assistant_msg)
+    session.commit()
+    session.refresh(assistant_msg)
+    
+    session.refresh(history)
 
-    return message
+    return history
 
 @router.get("/{history_id}", response_model=List[Message])
 def get_messages(history_id: int, session: Session = Depends(get_session)):
