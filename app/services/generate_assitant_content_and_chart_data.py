@@ -61,11 +61,15 @@ Try asking something like:
                     f"No results were found for your query. "
                     f"(Additionally, an error occurred while checking the latest date: {str(error)})"
                 )
-
+        chart_type = infer_chart_type(
+            labels=[str(label) for label, _ in valid_rows],
+            values=[float(value) for _, value in valid_rows],
+            message_content=message.content
+        )
         # Si hay datos válidos, generar el chart
         chart = Chart(
             history_id=history.id,
-            chart_type="bar",
+            chart_type=chart_type,
             title=message.content[:30],
             x_axis="label",
             y_axis="value",
@@ -83,7 +87,7 @@ Try asking something like:
             session.add(chart_data)
 
         session.commit()
-        return "This is your generated chart: **{chart.title}** of your query"
+        return f"This is your generated chart: **{chart.title}** of your query"
 
     except OperationalError as oe:
         return f"There was a problem executing your query. It might be a syntax error or invalid column.\nDetails: {str(oe.orig)}"
@@ -96,3 +100,33 @@ Try asking something like:
 
     except Exception as e:
         return f"Unexpected error: {str(e)}"
+
+
+def infer_chart_type(labels: list[str], values: list[float], message_content: str = "") -> str:
+    """
+    Define the chart type with labels and values
+    
+    Args:
+        labels list[str]: Could be Products name, etc.
+        values list[float]: Could be quantity, Money, etc.
+        message_content str: Message instance of "user" type. 
+        
+    Return:
+        A chart type "bar" | "line" | "pie"
+    """
+    days = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+    if all(isinstance(label, str) and label.lower() in days for label in labels):
+        return "bar"
+
+    if any(label for label in labels if isinstance(label, str) and ("20" in label or "-" in label)):
+        return "line"
+
+    if any(kw in message_content.lower() for kw in ["evolución", "últimos", "tendencia", "a lo largo", "mes", "día", "semana", "tiempo"]):
+        return "line"
+
+    if any(kw in message_content.lower() for kw in ["porcentaje", "proporción", "distribución"]):
+        if len(labels) <= 6 and sum(values) > 0 and all(v >= 0 for v in values):
+            return "pie"
+
+    # Por defecto, usamos barras
+    return "bar"

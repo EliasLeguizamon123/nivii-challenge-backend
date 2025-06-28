@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
+from sqlalchemy.orm import selectinload
 
 from app.database.config import get_session
 from app.services.openai import generate_sql_from_natural_language
 from app.entities.messages import Message
 from app.entities.query_history import QueryHistory, QueryHistoryRead
 from app.services.generate_assitant_content_and_chart_data import generate_assistant_content_and_chart_data
+
 router = APIRouter()
 
 @router.post("/", response_model=QueryHistoryRead)
@@ -60,5 +62,13 @@ def create_message_with_history(message: Message, session: Session = Depends(get
     session.add(assistant_msg)
     session.commit()
 
-    session.refresh(history)
+    history = session.exec(
+        select(QueryHistory)
+        .where(QueryHistory.id == history.id)
+        .options(
+            selectinload(QueryHistory.messages),
+            selectinload(QueryHistory.charts),
+        )
+    ).one()
+
     return history
