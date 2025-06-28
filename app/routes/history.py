@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import selectinload
-from sqlmodel import select, Session
-from datetime import datetime
+from sqlmodel import select, Session, desc
 
 from app.database.config import get_session
 from app.entities.query_history import QueryHistory, QueryHistoryRead
@@ -13,24 +12,8 @@ def get_query_history(session: Session = Depends(get_session)):
     """
     Retrieve the entire query history.
     """
-    statement = select(QueryHistory)
+    statement = select(QueryHistory).order_by(desc(QueryHistory.created_at))
     history = session.exec(statement).all()
-    return history
-
-@router.post("/", response_model=QueryHistory)
-def create_query_history(session: Session = Depends(get_session)):
-    """
-    Create a new query history entry.
-    """
-    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    history = QueryHistory(
-        title=f"chat {now_str}",
-        preview=f"chat {now_str}",
-        created_at=datetime.now()
-    )
-    session.add(history)
-    session.commit()
-    session.refresh(history)
     return history
 
 @router.get("/{history_id}", response_model=QueryHistoryRead)

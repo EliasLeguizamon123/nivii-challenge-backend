@@ -1,9 +1,11 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.config import engine, create_db_and_tables
 from app.routes import ping, messages, history
 
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 app = FastAPI()
 
 app.add_middleware(

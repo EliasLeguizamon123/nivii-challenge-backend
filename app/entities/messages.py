@@ -1,5 +1,3 @@
-# app/models/message.py
-
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
@@ -14,7 +12,6 @@ class MessageRead(SQLModel):
     type: str
     content: str
     created_at: datetime
-    has_chart: Optional[bool] = False
 
     class Config:
         orm_mode = True
@@ -29,6 +26,5 @@ class Message(SQLModel, table=True):
     type: MessageType
     content: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    has_chart: Optional[bool] = False
-
+    
     history: Optional["QueryHistory"] = Relationship(back_populates="messages")
